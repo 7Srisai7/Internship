@@ -1,0 +1,100 @@
+"""
+Binary_Classification.py
+------------------------
+A clean end-to-end binary classification example.
+Runs on local machine or Google Colab.
+"""
+
+# Import libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, roc_curve, auc
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
+# 1. Load dataset
+# (Change this line to your own CSV file if you have one)
+# Example: df = pd.read_csv("data/your_dataset.csv")
+from sklearn.datasets import load_breast_cancer
+data = load_breast_cancer()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+df['target'] = data.target
+
+print("✅ Dataset loaded successfully")
+print("Shape:", df.shape)
+print("Columns:", list(df.columns))
+print()
+
+# 2. Basic EDA (optional)
+print("First 5 rows:")
+print(df.head())
+print("\nTarget value counts:")
+print(df['target'].value_counts())
+print()
+
+# 3. Split features & target
+X = df.drop(columns=['target'])
+y = df['target']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+print(f"Training samples: {X_train.shape[0]}, Testing samples: {X_test.shape[0]}")
+
+# 4. Feature scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 5. Choose and train model
+model = LogisticRegression(max_iter=1000, random_state=42)
+# OR you can use:
+# model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+model.fit(X_train_scaled, y_train)
+print("\n✅ Model trained successfully.")
+
+# 6. Predictions and evaluation
+y_pred = model.predict(X_test_scaled)
+y_prob = model.predict_proba(X_test_scaled)[:, 1]
+
+acc = accuracy_score(y_test, y_pred)
+print(f"\n🎯 Accuracy: {acc:.4f}")
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# 7. Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(5, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.tight_layout()
+plt.savefig("confusion_matrix.png")
+plt.close()
+
+# 8. ROC Curve
+fpr, tpr, _ = roc_curve(y_test, y_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.figure(figsize=(6, 5))
+plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {roc_auc:.3f})')
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("Receiver Operating Characteristic")
+plt.legend(loc="lower right")
+plt.tight_layout()
+plt.savefig("roc_curve.png")
+plt.close()
+
+print("\n✅ Evaluation complete. Plots saved as:")
+print(" - confusion_matrix.png")
+print(" - roc_curve.png")
+print("\nAll done 🎉")
